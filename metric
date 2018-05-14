@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import time
+import argparse
+import sys
+
+def cpu_info():
+    #parse /proc/stat
+    cpu_stat_file = open('/proc/stat', 'r')
+    cpu_stat = cpu_stat_file.readline().split()
+    cpu_user, cpu_nice, cpu_sys, cpu_idle, cpu_iowait, cpu_irq, cpu_sirq, cpu_steal, cpu_guest = ( float(cpu_stat[1]), float(cpu_stat[2]),
+                                                                                                   float(cpu_stat[3]), float(cpu_stat[4]),
+                                                                                                   float(cpu_stat[5]), float(cpu_stat[6]),
+                                                                                                   float(cpu_stat[7]), float(cpu_stat[8]),
+                                                                                                   float(cpu_stat[9]) )
+    cpu_total = cpu_user + cpu_nice + cpu_sys + cpu_idle + cpu_iowait + cpu_irq + cpu_sirq + cpu_steal + cpu_guest
+    #Wait and read again
+    time.sleep(1)
+    cpu_stat_dif = cpu_stat_file.readline().split()
+    cpu_user_dif, cpu_nice_dif, cpu_sys_dif, cpu_idle_dif, cpu_iowait_dif, cpu_irq_dif, cpu_sirq_dif, cpu_steal_dif, cpu_guest_dif = ( float(cpu_stat_dif[1]), float(cpu_stat_dif[2]),
+                                                                                                                                       float(cpu_stat_dif[3]), float(cpu_stat_dif[4]),
+                                                                                                                                       float(cpu_stat_dif[5]), float(cpu_stat_dif[6]),
+                                                                                                                                       float(cpu_stat_dif[7]), float(cpu_stat_dif[8]),
+                                                                                                                                       float(cpu_stat_dif[9]) )
+    cpu_total_dif = cpu_user_dif + cpu_nice_dif + cpu_sys_dif + cpu_idle_dif + cpu_iowait_dif + cpu_irq_dif + cpu_sirq_dif
+    cpu_stat_file.close()
+
+    cpu_total_delta = cpu_total - cpu_total_dif
+    #Print cpu stats
+    print 'system.cpu.idle', round((cpu_idle - cpu_idle_dif)/cpu_total_delta*100, 2)
+    print 'system.cpu.user', round((cpu_user - cpu_user_dif)/cpu_total_delta*100, 2)
+    print 'system.cpu.guest', round((cpu_guest - cpu_guest_dif)/cpu_total_delta*100, 2)
+    print 'system.cpu.iowait', round((cpu_iowait - cpu_iowait_dif)/cpu_total_delta*100, 2)
+    print 'system.cpu.stolen', round((cpu_steal - cpu_steal_dif) / cpu_total_delta * 100, 2)
+    print 'system.cpu.sys', round((cpu_sys - cpu_sys_dif) / cpu_total_delta * 100, 2)
+
+def mem_info ():
+    #Parse /proc/meminfo
+    mem_stat = open('/proc/meminfo', 'r')
+    mem_stat_list = mem_stat.read().split()
+    #Print memmory info
+    print 'Mem total', mem_stat_list[(mem_stat_list.index('MemTotal:')+1)], 'kB'
+    print 'Mem used', int(mem_stat_list[(mem_stat_list.index('MemTotal:')+1)]) - int(mem_stat_list[(mem_stat_list.index('MemFree:') + 1)]), 'kB'
+    print 'Mem free', mem_stat_list[(mem_stat_list.index('MemFree:') + 1)], 'kB'
+    print 'Buffers', mem_stat_list[(mem_stat_list.index('Buffers:') + 1)], 'kB'
+    print 'Cached', mem_stat_list[(mem_stat_list.index('Cached:') + 1)], 'kB'
+    print 'swap total', mem_stat_list[(mem_stat_list.index('SwapTotal:') + 1)], 'kB'
+    print 'swap used', int(mem_stat_list[(mem_stat_list.index('SwapTotal:') + 1)]) - int(mem_stat_list[(mem_stat_list.index('SwapFree:') + 1)]), 'kB'
+    print 'swap free', mem_stat_list[(mem_stat_list.index('SwapFree:') + 1)], 'kB'
+    print ''
+    mem_stat.close()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mem', help="show MEM info", action='store_true')
+    parser.add_argument('--cpu', help="show CPU info", action='store_true')
+    args = parser.parse_args()
+    if args.mem:
+       mem_info()
+    if args.cpu:
+       cpu_info()
+
